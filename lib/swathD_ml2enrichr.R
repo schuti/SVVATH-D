@@ -1,5 +1,6 @@
-library(mixOmics)
+#library(mixOmics)
 library(FactoMineR)
+library(fastICA)
 library(NMF)
 
 swathD_ml2enrichr <- function(x){
@@ -12,83 +13,120 @@ swathD_ml2enrichr <- function(x){
     fit_pca <- PCA(log_ds[ , 2:length(log_ds)], graph = FALSE, scale.unit = TRUE, ncp = 3)
     pca <- fit_pca[["var"]][["contrib"]] %>% as.data.frame()
     pca <- data.frame("gene" = rownames(pca), pca, stringsAsFactors = FALSE) 
-    com1 <- pca %>% dplyr::arrange(desc(abs(pca$Dim.1))) %>% head(n = 50) %>%
+   #pca <- cbind(pca, anova_pVal = anova_ds[,1])
+    com1 <- pca %>% dplyr::arrange(desc(abs(pca$Dim.1))) %>% #head(n = 50) %>%
                      dplyr::select("gene") %>% .$gene 
-    com2 <- pca %>% dplyr::arrange(desc(abs(pca$Dim.2))) %>% head(n = 50) %>%
+    com2 <- pca %>% dplyr::arrange(desc(abs(pca$Dim.2))) %>% #head(n = 50) %>%
                      dplyr::select("gene") %>% .$gene 
-    com3 <- pca %>% dplyr::arrange(desc(abs(pca$Dim.3))) %>% head(n = 50) %>%
+    com3 <- pca %>% dplyr::arrange(desc(abs(pca$Dim.3))) %>% #head(n = 50) %>%
                      dplyr::select("gene") %>% .$gene
+   # com4 <- pca %>% dplyr::arrange(desc(abs(pca$Dim.4))) %>% #head(n = 50) %>%
+                  #  dplyr::select("gene") %>% .$gene
+  #  com5 <- pca %>% dplyr::arrange(desc(abs(pca$Dim.5))) %>% #head(n = 50) %>%
+                   # dplyr::select("gene") %>% .$gene
     com_genes <- list(com1 = com1, com2 = com2, com3 = com3)
     com_genes <<- com_genes
   
+#    pca_sig <- pca %>% filter(anova_pVal < 0.05)
+ #   sig_com1 <- pca_sig %>% dplyr::arrange(desc(abs(pca_sig$Dim.1))) %>% #head(n = 50) %>%
+  #    dplyr::select("gene") %>% .$gene 
+   # sig_com2 <- pca_sig %>% dplyr::arrange(desc(abs(pca_sig$Dim.2))) %>% #head(n = 50) %>%
+    #  dplyr::select("gene") %>% .$gene 
+#    sig_com3 <- pca_sig %>% dplyr::arrange(desc(abs(pca_sig$Dim.3))) %>% #head(n = 50) %>%
+ #     dplyr::select("gene") %>% .$gene
+  #  sig_com_genes <- list(sig_com1 = sig_com1, sig_com2 = sig_com2, sig_com3 = sig_com3)
+   # sig_com_genes <<- sig_com_genes
     
-    percentage <- fit_pca$eig[ , 2]
+  #  percentage <- fit_pca$eig[ , 2]
     
-    PCs <- data.frame(fit_pca$ind$coord)
+  #  PCs <- data.frame(fit_pca$ind$coord)
     #PCs <- data.frame(fit_pca$ind$cos2)
-    PCs$group <- group
+  #  PCs$group <- group
     
-    plotPCA <- ggplot(data = PCs, aes(x = Dim.1, y = Dim.2)) +
-      geom_point(aes(colour = group), size = 3) +
-      xlab(paste0('PC1', ' ', '(', round(percentage[1], 2), '%)')) + 
-      ylab(paste0('PC2', ' ', '(', round(percentage[2], 2), '%)')) +
-      scale_fill_hue(l=40) + 
-      coord_fixed(ratio=1, xlim=range(PCs$Dim.1), ylim=range(PCs$Dim.2)) +
-      geom_text_repel(label = rownames(PCs)) +
-      theme_light()
+#    plotPCA <- ggplot(data = PCs, aes(x = Dim.1, y = Dim.2)) +
+ #     geom_point(aes(colour = group), size = 3) +
+  #    xlab(paste0('PC1', ' ', '(', round(percentage[1], 2), '%)')) + 
+   #   ylab(paste0('PC2', ' ', '(', round(percentage[2], 2), '%)')) +
+    #  scale_fill_hue(l=40) + 
+#      coord_fixed(ratio=1, xlim=range(PCs$Dim.1), ylim=range(PCs$Dim.2)) +
+ #     geom_text_repel(label = rownames(PCs)) +
+  #    theme_light()
     
-  } else if(chose_ml == 'sipca'){
-  #sIPCA from mixOmics package
-    print("run sIPCA")
-    tmp <- log_ds[ , 2:length(log_ds)] %>% scale()
-    tmp[which(is.na(tmp), arr.ind = TRUE)] <- 0
-    fit_sipca <- sipca(tmp, mode = "deflation", scale = FALSE, 
-                       ncomp = 3, keepX = c(50, 50, 50))
+#  } else if(chose_ml == 'sipca'){
+ # #sIPCA from mixOmics package
+  #  print("run sIPCA")
+   # tmp <- log_ds[ , 2:length(log_ds)] %>% scale()
+#    tmp[which(is.na(tmp), arr.ind = TRUE)] <- 0
+ #   fit_sipca <- sipca(tmp, mode = "deflation", scale = FALSE, 
+  #                     ncomp = 3, keepX = c(50, 50, 50))
     
-    com1 <- selectVar(fit_sipca, comp = 1)$value %>% rownames()
-    com2 <- selectVar(fit_sipca, comp = 2)$value %>% rownames()
-    com3 <- selectVar(fit_sipca, comp = 3)$value %>% rownames()
+#    com1 <- selectVar(fit_sipca, comp = 1)$value %>% rownames()
+ #   com2 <- selectVar(fit_sipca, comp = 2)$value %>% rownames()
+  #  com3 <- selectVar(fit_sipca, comp = 3)$value %>% rownames()
+   # com_genes <- list(com1 = com1, com2 = com2, com3 = com3)
+    #com_genes <<- com_genes
+  
+  } else if(chose_ml == 'ica'){
+    #sIPCA from mixOmics package
+    print("run ICA")
+    tmp <- t(log_ds[ , 2:length(log_ds)]) %>% as.data.frame()
+    #tmp[which(is.na(tmp), arr.ind = TRUE)] <- 0
+    fit_ica <- fastICA(tmp, n.comp = 3)
+    
+    com1 <- names(sort(abs(fit_ica$S[, 1]), decreasing = TRUE))
+    com2 <- names(sort(abs(fit_ica$S[, 2]), decreasing = TRUE))
+    com3 <- names(sort(abs(fit_ica$S[, 3]), decreasing = TRUE))
     com_genes <- list(com1 = com1, com2 = com2, com3 = com3)
     com_genes <<- com_genes
-  
+    
   } else if(chose_ml == 'nmf'){
   # NMF from NMF package
     print("run NMF with 100 iterations")
     tmp <- t(log_ds[ , 2:length(log_ds)]) %>% as.data.frame()
-    fit_nmf <- nmf(tmp, rank = 3,  method = 'brunet', seed = 123456, nrun=100) 
+    fit_nmf <- nmf(abs(tmp), rank = k_rank,  method = 'brunet', seed = 123456, nrun=100) 
     fs <- featureScore(fit_nmf, method = 'kim')
-    ef <- extractFeatures(fit_nmf, method = 'kim', format = 'list')
-    com1 <- fs[ef[[1]]]
-    com1 <- names(com1) #%>% head(n = 100)
-    com2 <- fs[ef[[2]]]
-    com2 <- names(com2) #%>% head(n = 100)
-    com3 <- fs[ef[[3]]]
-    com3 <- names(com3) #%>% head(n = 100)
-    com_genes <- list(com1 = com1, com2 = com2, com3 = com3)
-    com_genes <<- com_genes
+   # ef <- extractFeatures(fit_nmf, method = 'kim', format = 'list')
+    ef <- extractFeatures(fit_nmf, length(fs))
+    com_genes <- list()
+    for(i in 1:length(ef)){
+      com_genes[[i]] <- names(fs[ef[[i]]])
+      names(com_genes)[i] <- paste0("com", seq(1:length(ef)))[i]
+      com_genes <<- com_genes
+
+    }
+    
+    
+#    com1 <- fs[ef[[1]]]
+ #   com1 <- names(com1) #%>% head(n = 100)
+  #  com2 <- fs[ef[[2]]]
+   # com2 <- names(com2) #%>% head(n = 100)
+#    com3 <- fs[ef[[3]]]
+ #   com3 <- names(com3) #%>% head(n = 100)
+  #  com_genes <- list(com1 = com1, com2 = com2, com3 = com3)
+   # com_genes <<- com_genes
   }
   
-  mat_com1 <- dfmat_medScale_all[com_genes$com1, ]
-  mat_com2 <- dfmat_medScale_all[com_genes$com2, ]
-  mat_com3 <-dfmat_medScale_all[com_genes$com3, ]
-  mat_coms <- list(mat_com1 = mat_com1, mat_com2 = mat_com2, mat_com3 = mat_com3)
-  mat_coms <<- mat_coms
+#  mat_com1 <- dfmat_medScale_all[com_genes$com1 %>% head(n=50), ]
+ # mat_com2 <- dfmat_medScale_all[com_genes$com2 %>% head(n=50), ]
+  #mat_com3 <-dfmat_medScale_all[com_genes$com3 %>% head(n=50), ]
+#  mat_coms <- list(mat_com1 = mat_com1, mat_com2 = mat_com2, mat_com3 = mat_com3)
+ # mat_coms <<- mat_coms
   
-  sig_com1 <- dfmat_medScale_sig[com_genes$com1, ]
-  ind <- which(!is.na(sig_com1), arr.ind = TRUE)
-  sig_com1 <- sig_com1[unique(ind[ ,1]), ]
-  sig_com2 <- dfmat_medScale_sig[com_genes$com2, ]
-  ind <- which(!is.na(sig_com2), arr.ind = TRUE)
-  sig_com2 <- sig_com2[unique(ind[ ,1]), ]
-  sig_com3 <-dfmat_medScale_sig[com_genes$com3, ]
-  ind <- which(!is.na(sig_com3), arr.ind = TRUE)
-  sig_com3 <- sig_com3[unique(ind[ ,1]), ]
-  sig_coms <- list(sig_com1 = sig_com1, sig_com2 = sig_com2, sig_com3 = sig_com3)
-  sig_coms <<- sig_coms
+#  sig_com1 <- dfmat_medScale_sig[com_genes$com1 %>% dplyr::filter(anova_pVal > 0.05) %>% head (n=50), ]
+ # ind <- which(!is.na(sig_com1), arr.ind = TRUE)
+  #sig_com1 <- sig_com1[unique(ind[ ,1]), ]
+#  sig_com2 <- dfmat_medScale_sig[com_genes$com2, ]
+ # ind <- which(!is.na(sig_com2), arr.ind = TRUE)
+  #sig_com2 <- sig_com2[unique(ind[ ,1]), ]
+#  sig_com3 <-dfmat_medScale_sig[com_genes$com3, ]
+ # ind <- which(!is.na(sig_com3), arr.ind = TRUE)
+  #sig_com3 <- sig_com3[unique(ind[ ,1]), ]
+#  sig_coms <- list(sig_com1 = sig_com1, sig_com2 = sig_com2, sig_com3 = sig_com3)
+ # sig_coms <<- sig_coms
   
-  com_sig_genes <- lapply(sig_coms, rownames)
-  com_sig_genes <<- com_sig_genes
-  
+# com_sig_genes <- lapply(sig_coms, rownames)
+ # com_sig_genes <<- com_sig_genes
+
 }
 
 

@@ -20,6 +20,10 @@ swathD_imputeFirst <- function(dat = NULL){
   }else if(naImpute == "kNN"){
     # kNN impute
     impBeforeNorm[ind] <- impute.knn(impBeforeNorm, k = 10, rowmax = 0.5, colmax = 0.9, maxp = 1500, rng.seed = 1234)$data[ind[ ,1]]
+  }else if(naImpute == "REMOVE"){
+    # Remove rows containing missing values
+    impBeforeNorm <- impBeforeNorm[!unique(ind[,1])]
+    impBeforeNorm <<- impBeforeNorm
   }
   expr_all <<- impBeforeNorm %>% as.data.frame()
 }

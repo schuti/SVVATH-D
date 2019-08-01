@@ -44,9 +44,9 @@ hm_var_tmp <- pheatmap(dfvar_topNp, breaks = seq(-(max(round(dfvar_topNp, 0))), 
                    # annotation_col = data.frame(group, row.names = sample_label),
                    annotation_col = data.frame(group = factor(group), row.names = sample_label),
                    #annotation_row = y2,
-                   clustering_distance_rows = chose_dist,
-                   clustering_distance_cols = chose_dist, #'correlation', 'euclidean', 'maximum', 'manhattan', 'canberra', 'binary', 'minkowski'
-                   clustering_method = chose_link, # 'ward', 'ward.D', 'ward.D2', 'single', 'complete', 'average', 'mcquitty', 'median' or 'centroid'.
+                   clustering_distance_rows = re_dist,
+                   clustering_distance_cols = re_dist, #'correlation', 'euclidean', 'maximum', 'manhattan', 'canberra', 'binary', 'minkowski'
+                   clustering_method = re_linkage, # 'ward', 'ward.D', 'ward.D2', 'single', 'complete', 'average', 'mcquitty', 'median' or 'centroid'.
                    #clustering_method_columns = "ward",
                    fontsize_row = 5, fontsize_col = 10, 
                    scale = "none",
@@ -75,9 +75,9 @@ hm_var <- pheatmap(dfvar_topNp, breaks = seq(-(max(round(dfvar_topNp, 0))), max(
                        # annotation_col = data.frame(group, row.names = sample_label),
                        annotation_col = data.frame(group = factor(group), row.names = sample_label),
                        annotation_row = y2,
-                       clustering_distance_rows = "correlation",
-                       clustering_distance_cols = "correlation", #'correlation', 'euclidean', 'maximum', 'manhattan', 'canberra', 'binary', 'minkowski'
-                       clustering_method = "average", # 'ward', 'ward.D', 'ward.D2', 'single', 'complete', 'average', 'mcquitty', 'median' or 'centroid'.
+                       clustering_distance_rows = re_dist, # "correlation",
+                       clustering_distance_cols = re_dist, #"correlation", #'correlation', 'euclidean', 'maximum', 'manhattan', 'canberra', 'binary', 'minkowski'
+                       clustering_method = re_linkage, #"average", # 'ward', 'ward.D', 'ward.D2', 'single', 'complete', 'average', 'mcquitty', 'median' or 'centroid'.
                        #clustering_method_columns = "ward",
                        fontsize_row = 5, fontsize_col = 10, 
                        scale = "none",
