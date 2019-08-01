@@ -69,7 +69,11 @@ pmad <- list()
 for (i in seq_along(norm_all)){
   pmad[[i]] <-  group_mad(norm_all[[i]])
   names(pmad)[i] <- names(norm_all[i])
-  pmad <<- pmad
+  x <- bind_rows(pmad)
+  y <- apply(x, 2, median, na.rm = T) %>% sort() %>% names()
+  z <- x[, y]
+  pmad <<- z
+  #pmad <<- pmad
 } 
 
 
@@ -89,7 +93,11 @@ pcv <- list()
 for (i in seq_along(norm_all)){
   pcv[[i]] <-  group_cv(norm_all[[i]])
   names(pcv)[i] <- names(norm_all[i])
-  pcv <<- pcv
+  x <- bind_rows(pcv)
+  y <- apply(x, 2, median, na.rm = T) %>% sort() %>% names()
+  z <- x[, y]
+  pcv <<- z
+  #pcv <<- pcv
 } 
 
 group_variance <- function(x){      
@@ -104,7 +112,11 @@ pev <- list()
 for (i in seq_along(norm_all)){
   pev[[i]] <-  group_variance(norm_all[[i]])
   names(pev)[i] <- names(norm_all[i])
-  pev <<- pev
+  x <- bind_rows(pev)
+  y <- apply(x, 2, median, na.rm = T) %>% sort() %>% names()
+  z <- x[, y]
+  pev <<- z
+  #pev <<- pev
 } 
 
 }

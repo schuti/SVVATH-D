@@ -53,9 +53,9 @@ if(min(re_enrich4_table$Adjusted.P.value) >= adjPval){
 re_enrich4_table <- tidyr::separate(re_enrich4_table, Overlap, c("geneInput", "geneTotal"), sep = "/")
 re_enrich4_table$geneInput <- as.numeric(re_enrich4_table$geneInput)
 re_enrich4_table$geneTotal <- as.numeric(re_enrich4_table$geneTotal)
-re_enrich4_table <- re_enrich4_table %>% mutate("geneRatio" = (geneInput / geneTotal)) %>% dplyr::arrange(Adjusted.P.value)
+re_enrich4_table <- re_enrich4_table %>% mutate("Pathway_fraction_observed" = (geneInput / geneTotal)) %>% dplyr::arrange(Adjusted.P.value)
 #re_enrich4_table <- re_enrich4_table %>% mutate("rankScore" = (geneRatio) * (1/Adjusted.P.value) )
-re_enrich4_table <- re_enrich4_table %>% mutate("rankScore" = (100*geneRatio) * (-log10(Adjusted.P.value)) )
+re_enrich4_table <- re_enrich4_table %>% mutate("rankScore" = (100*Pathway_fraction_observed) * (-log10(Adjusted.P.value)) )
 re_enrich4_table <<- re_enrich4_table
 
 # filter by rankScore -------------------------------------------------------------
@@ -105,9 +105,9 @@ long_tmp2 <- bind_rows(long_tmp)
 #tmp_geneRatio <- enrich_edge_cutoff$geneRatio
 #tmp_pval <- data_frame("From" = tmp_term, "Adj.P.value" = tmp_pval)
 
-tmp <- enrich_edge_cutoff %>% dplyr::select('Term', 'Adjusted.P.value', 'geneRatio')
+tmp <- enrich_edge_cutoff %>% dplyr::select('Term', 'Adjusted.P.value', 'Pathway_fraction_observed')
 colnames(tmp) <- c("to", "score", "width")
-tmp$width <- round(((5*tmp$width) * as.numeric(enrich_edge_cutoff$geneInput))^2, 1)
+#tmp$width <- round(((5*tmp$width) * as.numeric(enrich_edge_cutoff$geneInput))^2, 1)
 
 merge <- left_join(long_tmp2, tmp, by = "to")
 
@@ -148,30 +148,43 @@ ml2net_nodes <- left_join(ml2net_nodes, tmp_size, by = 'id')
 #ml2net_nodes$value <- (ml2net_nodes$value)
 
 ind <- which(is.na(ml2net_nodes$color), arr.ind = TRUE)
-#ml2net_nodes[ind, 5] <- 1
-ml2net_nodes[ind, 5] <- "#d9d9d9" # input genes from the chosen component 
 
-ind1 <- suppressWarnings( which(as.numeric(ml2net_nodes$color) >= 0.05) )
-ml2net_nodes[ind1, 5] <- "black"
-ind2 <- suppressWarnings( which(as.numeric(ml2net_nodes$color) < 0.05 & as.numeric(ml2net_nodes$color) >= 0.005) )
-ml2net_nodes[ind2, 5] <- "#ffcccc"
-ind3 <- suppressWarnings( which(as.numeric(ml2net_nodes$color) < 0.005 & as.numeric(ml2net_nodes$color) >= 0.0005) )
-ml2net_nodes[ind3, 5] <- "ffb3b3"
-ind4 <- suppressWarnings( which(as.numeric(ml2net_nodes$color) < 0.0005 & as.numeric(ml2net_nodes$color) >= 0.00005) )
-ml2net_nodes[ind4, 5] <- "ff9999"
-ind5 <- suppressWarnings( which(as.numeric(ml2net_nodes$color) < 0.00005 & as.numeric(ml2net_nodes$color) >= 0.000005) )
-ml2net_nodes[ind5, 5] <- "ff8080"
-ind6 <- suppressWarnings( which(as.numeric(ml2net_nodes$color) < 0.000005) )
-ml2net_nodes[ind6, 5] <- "ff4d4d"
+ml2net_nodes_na <- ml2net_nodes[ind, ]
+ml2net_nodes_na$color <- "#d9d9d9"
+ml2net_nodes_col <- ml2net_nodes[-ind, ]
+#ml2net_nodes_rank <- ml2net_nodes_col %>% mutate(rank = rank(ml2net_nodes_col$color))
+ml2net_nodes_rank2 <- ml2net_nodes_col %>% mutate(rank = colorRampPalette(c('red', 'yellow'))(length(ml2net_nodes_col$color))[rank(ml2net_nodes_col$color)])
+ml2net_nodes_rank2 <- ml2net_nodes_rank2[, -5]
+colnames(ml2net_nodes_rank2) <- c("label", "id", "group", "value", "color")
+ml2net_nodes <- bind_rows(ml2net_nodes_na, ml2net_nodes_rank2)
+
+ind <- which(is.na(ml2net_nodes$value), arr.ind = TRUE)
+ml2net_nodes[ind, 4] <- 1
+
+#ml2net_nodes[ind, 5] <- 1
+#ml2net_nodes[ind, 5] <- "#d9d9d9" # input genes from the chosen component 
+
+#ind1 <- suppressWarnings( which(as.numeric(ml2net_nodes$color) >= 0.05) )
+#ml2net_nodes[ind1, 5] <- "black"
+#ind2 <- suppressWarnings( which(as.numeric(ml2net_nodes$color) < 0.05 & as.numeric(ml2net_nodes$color) >= 0.005) )
+#ml2net_nodes[ind2, 5] <- "#ffcccc"
+#ind3 <- suppressWarnings( which(as.numeric(ml2net_nodes$color) < 0.005 & as.numeric(ml2net_nodes$color) >= 0.0005) )
+#ml2net_nodes[ind3, 5] <- "ffb3b3"
+#ind4 <- suppressWarnings( which(as.numeric(ml2net_nodes$color) < 0.0005 & as.numeric(ml2net_nodes$color) >= 0.00005) )
+#ml2net_nodes[ind4, 5] <- "ff9999"
+#ind5 <- suppressWarnings( which(as.numeric(ml2net_nodes$color) < 0.00005 & as.numeric(ml2net_nodes$color) >= 0.000005) )
+#ml2net_nodes[ind5, 5] <- "ff8080"
+#ind6 <- suppressWarnings( which(as.numeric(ml2net_nodes$color) < 0.000005) )
+#ml2net_nodes[ind6, 5] <- "ff4d4d"
 
 #x <- ml2net_nodes %>% replace(. < 0.05 & . > 0.005,  "white") 
 
-ml2net_nodes2 <- ml2net_nodes %>% dplyr::group_by(label, id) %>% slice(1)
+ml2net_nodes <- ml2net_nodes %>% dplyr::group_by(label, id) %>% slice(1)
 ml2net_nodes <<- ml2net_nodes
 
-ml2net_vis <- visNetwork(ml2net_nodes2, ml2net_edge) %>%
+ml2net_vis <- visNetwork(ml2net_nodes, ml2net_edge) %>%
                 visNodes(physics = FALSE) %>%
-                visEdges(physics= FALSE, smooth = TRUE, color = list(color = "#008080", highlight = "purple")) %>%
+                visEdges(physics= FALSE, smooth = TRUE, color = list(color = "green", highlight = "purple")) %>% #, color = list(color = "#008080", highlight = "purple")) %>%
                 visGroups(groupname = "Gene involved", shape = "dot", #size = 1,
                           font =  list(color = "magenta", size = 25),
                           color = list(shadow = TRUE, background = "ddd", border = "black",
@@ -181,10 +194,10 @@ ml2net_vis <- visNetwork(ml2net_nodes2, ml2net_edge) %>%
                           font =  list(color = "blue", size = 25),
                           color = list(background = "yellow", border = "orange",
                                        highlight = list(background = "feff8f", 
-                                                        border = "red")) ) #%>%
+                                                        border = "red")) ) %>%
                # visHierarchicalLayout(enabled = TRUE, levelSeparation = 150, treeSpacing = 100, nodeSpacing = 100, blockShifting = FALSE, edgeMinimization = FALSE) #%>%
-                #visIgraphLayout(type = "full", randomSeed = 9, layout = "layout_nicely", physics = FALSE, smooth = FALSE) %>% 
-                #visOptions(highlightNearest = TRUE, nodesIdSelection = TRUE, selectedBy = "group") #%>%
+                visIgraphLayout(type = "full", randomSeed = 9, layout = "layout_nicely", physics = FALSE, smooth = FALSE) #%>% 
+                #visOptions(highlightNearest = TRUE, nodesIdSelection = TRUE, selectedBy = "group") %>%
                 #visInteraction(navigationButtons = TRUE)
                 
 ml2net_vis <<- ml2net_vis
